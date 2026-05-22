@@ -775,32 +775,64 @@ function renderPanel(){
 
 function showMemberProfile(color){
   const viewer=document.getElementById('member-viewer');
-  const rows=actions.filter(a=>a.color===color).sort((a,b)=>b.id-a.id);
-  const last=rows[0];
+  renderMemberWeek(color,'current',viewer);
+}
+
+function renderMemberWeek(color,weekKey,viewer){
   const hex=COLOR_HEX[color]||'#fff';
+
+  // Construire les données selon la semaine choisie
+  let rows,weekLabel;
+  if(weekKey==='current'){
+    rows=actions.filter(a=>a.color===color).sort((a,b)=>b.id-a.id);
+    weekLabel='Semaine en cours';
+  } else {
+    const w=historique[parseInt(weekKey)];
+    rows=w?(w.actions||[]).filter(a=>a.color===color).sort((a,b)=>b.id-a.id):[];
+    weekLabel=w?getWeekLabel(w.weekStart).label:'—';
+  }
+
+  const last=rows[0];
   const totalMoney=rows.reduce((s,a)=>s+(a.revenue||0),0);
-  viewer.innerHTML=`<div class="member-viewer">
-    <div class="member-header">
-      <div class="member-big-avatar" style="background:${hex}">${color.substring(0,1).toUpperCase()}</div>
-      <div>
-        <div class="member-big-name" style="color:${hex}">${color.toUpperCase()}</div>
-        <div class="member-last">${last?'DERNIÈRE ACTION • '+last.action+' • '+last.date:'AUCUNE ACTION'}</div>
-        <div>${rows.length} action${rows.length>1?'s':''} — $${totalMoney.toLocaleString('fr-FR')} générés</div>
-      </div>
-    </div>
-    <div class="member-history">
-      <div class="member-history-title">HISTORIQUE DES ACTIONS</div>
-      ${rows.length?rows.map(a=>`<div class="member-action">
-        <div class="member-action-top"><div class="member-action-name">${a.action}</div><div class="member-action-date">${a.date}</div></div>
-        <div class="member-action-meta">
-          <span>${a.cp}</span>
-          ${a.revenue?'<span>$'+a.revenue.toLocaleString('fr-FR')+'</span>':''}
-          ${a.transac?'<span>'+a.transac.objet+' × '+a.transac.qty+'</span>':''}
-          ${a.tablette?'<span>'+a.tablette.objet+' × '+a.tablette.qty+'</span>':''}
-        </div>
-      </div>`).join(''):`<div class="no-data">// AUCUNE ACTION</div>`}
-    </div>
-  </div>`;
+
+  // Sélecteur de semaines
+  const weekOptions='<option value="current"'+(weekKey==='current'?' selected':'')+'>Semaine en cours</option>'+
+    [...historique].reverse().map(function(w,ri){
+      const realIdx=historique.length-1-ri;
+      const lbl=getWeekLabel(w.weekStart).dates;
+      return'<option value="'+realIdx+'"'+(weekKey==realIdx?' selected':'')+'>'+lbl+'</option>';
+    }).join('');
+
+  viewer.innerHTML='<div class="member-viewer">'+
+    '<div class="member-header">'+
+      '<div class="member-big-avatar" style="background:'+hex+'">'+color.substring(0,1).toUpperCase()+'</div>'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div class="member-big-name" style="color:'+hex+'">'+color.toUpperCase()+'</div>'+
+        '<div class="member-last">'+(last?'DERNIÈRE ACTION • '+last.action+' • '+last.date:'AUCUNE ACTION')+'</div>'+
+        '<div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+          '<span style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1px;">SEMAINE :</span>'+
+          '<select id="member-week-select" style="background:var(--bg3);border:1px solid var(--border);color:var(--text-bright);font-family:\'Share Tech Mono\',monospace;font-size:10px;padding:4px 8px;letter-spacing:1px;outline:none;" onchange="renderMemberWeek(\''+color+'\',this.value,document.getElementById(\'member-viewer\'))">'+
+            weekOptions+
+          '</select>'+
+          '<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--text-dim);">'+rows.length+' action'+(rows.length>1?'s':'')+' — $'+totalMoney.toLocaleString('fr-FR')+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="member-history">'+
+      '<div class="member-history-title">'+weekLabel+'</div>'+
+      (rows.length?rows.map(function(a){
+        return'<div class="member-action">'+
+          '<div class="member-action-top"><div class="member-action-name">'+a.action+'</div><div class="member-action-date">'+a.date+'</div></div>'+
+          '<div class="member-action-meta">'+
+            '<span>'+a.cp+'</span>'+
+            (a.revenue?'<span>$'+a.revenue.toLocaleString('fr-FR')+'</span>':'')+
+            (a.transac?'<span>'+a.transac.objet+' × '+a.transac.qty+'</span>':'')+
+            (a.tablette?'<span>'+a.tablette.objet+' × '+a.tablette.qty+'</span>':'')+
+          '</div>'+
+        '</div>';
+      }).join(''):'<div class="no-data">// AUCUNE ACTION CETTE SEMAINE</div>')+
+    '</div>'+
+  '</div>';
 }
 
 // Annonce
