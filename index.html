@@ -247,11 +247,63 @@
   .hist-tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
   .hist-empty{text-align:center;padding:80px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);}
   .hist-no-data{text-align:center;padding:60px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);}
+
+  /* ── MODE GESTION ── */
+  #gestion-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(3,3,3,.97);border-top:2px solid #f1c40f;padding:8px 24px;display:none;align-items:center;justify-content:space-between;z-index:9000;backdrop-filter:blur(12px);}
+  #gestion-bar.open{display:flex;}
+  #gestion-bar .g-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#f1c40f;}
+  #gestion-bar .g-logout{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);cursor:pointer;padding:4px 10px;border:1px solid #333;}
+  #gestion-bar .g-logout:hover{color:#f1c40f;border-color:#f1c40f;}
+  #gestion-trigger{position:fixed;bottom:0;right:0;width:50px;height:50px;z-index:9998;cursor:default;}
+
+  /* QUOTA / COPTA */
+  .copta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .copta-card{background:rgba(10,10,10,.9);border:1px solid var(--border);overflow:hidden;}
+  .copta-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);}
+  .copta-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+  .copta-name{font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:3px;font-weight:500;}
+  .copta-actions-count{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-left:auto;}
+  .copta-body{padding:14px 16px;}
+  .copta-status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .copta-status-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-dim);}
+  .copta-toggle{display:flex;gap:6px;}
+  .copta-btn{padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-dim);}
+  .copta-btn.active-oui{border-color:#2ecc71;color:#2ecc71;background:rgba(46,204,113,.08);}
+  .copta-btn.active-non{border-color:#e63946;color:#e63946;background:rgba(230,57,70,.08);}
+  .copta-btn:hover{border-color:var(--accent);color:var(--text-bright);}
+  .copta-actions-list{margin-top:8px;max-height:120px;overflow-y:auto;}
+  .copta-action-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;}
+  .copta-action-row:last-child{border-bottom:none;}
+  .copta-action-name{color:var(--text);}
+  .copta-action-date{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);}
+  .copta-empty{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;text-align:center;padding:14px 0;}
+  .copta-section-title{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px;}
 </style>
 </head>
 <body>
 
 <div id="admin-trigger"></div>
+<div id="gestion-trigger"></div>
+
+<!-- Gestion password modal -->
+<div class="modal-bg" id="gestion-modal">
+  <div class="modal">
+    <div class="modal-title">MODE GESTION</div>
+    <div class="modal-sub">// ACCÈS RESTREINT</div>
+    <input type="password" id="gestion-pwd-input" placeholder="Mot de passe...">
+    <div class="modal-err" id="gestion-pwd-err">✗ MOT DE PASSE INCORRECT</div>
+    <div class="modal-btns">
+      <div class="btn-modal" id="gestion-cancel">ANNULER</div>
+      <div class="btn-modal primary" id="gestion-confirm">CONFIRMER</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gestion bar -->
+<div id="gestion-bar">
+  <span class="g-label">⬡ MODE GESTION ACTIF</span>
+  <span class="g-logout" id="gestion-logout">QUITTER</span>
+</div>
 
 <!-- Password modal -->
 <div class="modal-bg" id="pwd-modal">
@@ -347,6 +399,7 @@
   <div class="tab active" data-tab="ajout">Ajout d'action</div>
   <div class="tab" data-tab="tableau">Tableau de bord</div>
   <div class="tab" data-tab="historique">Historique</div>
+  <div class="tab" data-tab="copta" id="copta-tab" style="display:none">Copta</div>
   <div class="tab" data-tab="panel" id="panel-tab" style="display:none">Panel</div>
 </nav>
 
@@ -508,6 +561,13 @@
   </div>
 </section>
 
+<!-- COPTA -->
+<section class="section" id="section-copta">
+  <div class="sec-label">Mode Gestion</div>
+  <div class="sec-title">Quota Hebdomadaire</div>
+  <div class="copta-grid" id="copta-grid"></div>
+</section>
+
 </main>
 
 <div class="toast" id="toast">✓ ACTION ENREGISTRÉE</div>
@@ -542,6 +602,7 @@ document.querySelectorAll('.tab').forEach(t=>{
     if(t.dataset.tab==='tableau')renderAll();
     if(t.dataset.tab==='panel')renderPanel();
     if(t.dataset.tab==='historique')renderHistorique();
+    if(t.dataset.tab==='copta')renderCopta();
   });
 });
 
@@ -1189,6 +1250,108 @@ function openHistWeek(idx){
 document.getElementById('hist-close').addEventListener('click',()=>document.getElementById('hist-modal-bg').classList.remove('open'));
 document.getElementById('hist-modal-bg').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 // ── END HISTORIQUE ─────────────────────────────────────────────────────────
+
+// ── MODE GESTION ──────────────────────────────────────────────────────────
+const GESTION_PWD='Lapegrito59';
+let isGestion=false;
+let gestionClickCount=0,gestionClickTimer;
+let coptaData={};
+firebaseOnValue(firebaseRef(firebaseDB,'copta'),snapshot=>{
+  coptaData=snapshot.val()||{};
+  if(isGestion)renderCopta();
+});
+
+document.getElementById('gestion-trigger').addEventListener('click',()=>{
+  gestionClickCount++;
+  clearTimeout(gestionClickTimer);
+  gestionClickTimer=setTimeout(()=>{gestionClickCount=0;},600);
+  if(gestionClickCount>=3){gestionClickCount=0;if(isGestion)logoutGestion();else openGestionModal();}
+});
+
+function openGestionModal(){
+  document.getElementById('gestion-pwd-input').value='';
+  document.getElementById('gestion-pwd-err').style.display='none';
+  document.getElementById('gestion-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('gestion-pwd-input').focus(),100);
+}
+document.getElementById('gestion-cancel').addEventListener('click',()=>document.getElementById('gestion-modal').classList.remove('open'));
+document.getElementById('gestion-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+document.getElementById('gestion-confirm').addEventListener('click',checkGestionPwd);
+document.getElementById('gestion-pwd-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkGestionPwd();});
+
+function checkGestionPwd(){
+  if(document.getElementById('gestion-pwd-input').value===GESTION_PWD){
+    document.getElementById('gestion-modal').classList.remove('open');
+    isGestion=true;
+    document.getElementById('gestion-bar').classList.add('open');
+    document.getElementById('copta-tab').style.display='block';
+    renderCopta();
+  } else {
+    document.getElementById('gestion-pwd-err').style.display='block';
+    document.getElementById('gestion-pwd-input').value='';
+  }
+}
+
+function logoutGestion(){
+  isGestion=false;
+  document.getElementById('gestion-bar').classList.remove('open');
+  document.getElementById('copta-tab').style.display='none';
+  const ct=document.querySelector('.tab[data-tab="copta"]');
+  if(ct&&ct.classList.contains('active')){
+    ct.classList.remove('active');
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelector('.tab[data-tab="ajout"]').classList.add('active');
+    document.getElementById('section-ajout').classList.add('active');
+  }
+}
+document.getElementById('gestion-logout').addEventListener('click',logoutGestion);
+
+const COLORS_ORDER=['blue','red','green','purple','grey','pink','white','skull','black'];
+const COLOR_NAMES={blue:'Dimitri Valonshki',red:'Jonny Vapiano',green:'Jules Despacito',purple:'Mathis Legrand',grey:'Darius Luczak',pink:'Mohez Vapiano',white:'Paco Galindo',skull:'Jimmy Galante',black:'Julien Thomas'};
+
+function renderCopta(){
+  const grid=document.getElementById('copta-grid');
+  grid.innerHTML=COLORS_ORDER.map(function(color){
+    const hex=COLOR_HEX[color]||'#888';
+    const name=COLOR_NAMES[color]||color;
+    const memberActions=actions.filter(function(a){return a.color===color;}).sort(function(a,b){return b.id-a.id;});
+    const status=coptaData[color]||'none';
+    const dotStyle=color==='skull'?'background:'+hex+';box-shadow:0 0 0 1px rgba(255,255,255,.2);':color==='black'?'background:'+hex+';box-shadow:0 0 0 1px #555;':'background:'+hex+';';
+    return'<div class="copta-card">'+
+      '<div class="copta-head">'+
+        '<span class="copta-dot" style="'+dotStyle+'"></span>'+
+        '<span class="copta-name" style="color:'+hex+'">'+name+'</span>'+
+        '<span class="copta-actions-count">'+memberActions.length+' action'+(memberActions.length!==1?'s':'')+'</span>'+
+      '</div>'+
+      '<div class="copta-body">'+
+        '<div class="copta-status-row">'+
+          '<span class="copta-status-label">QUOTA :</span>'+
+          '<div class="copta-toggle">'+
+            '<button class="copta-btn'+(status==='oui'?' active-oui':'')+'" onclick="setCoptaStatus(\''+color+'\',\'oui\')">OUI</button>'+
+            '<button class="copta-btn'+(status==='non'?' active-non':'')+'" onclick="setCoptaStatus(\''+color+'\',\'non\')">NON</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="copta-section-title">ACTIONS DE LA SEMAINE</div>'+
+        (memberActions.length?
+          '<div class="copta-actions-list">'+memberActions.slice(0,8).map(function(a){
+            return'<div class="copta-action-row">'+
+              '<span class="copta-action-name">'+a.action+'</span>'+
+              '<span class="copta-action-date">'+a.date+'</span>'+
+            '</div>';
+          }).join('')+'</div>':
+          '<div class="copta-empty">// AUCUNE ACTION</div>'
+        )+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function setCoptaStatus(color,val){
+  coptaData[color]=val;
+  firebaseSet(firebaseRef(firebaseDB,'copta'),coptaData);
+  renderCopta();
+}
+// ── END MODE GESTION ──────────────────────────────────────────────────────
 
 loadAnnonce();
 </script>
